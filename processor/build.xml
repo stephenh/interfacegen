@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<project name="interfacegen" xmlns:ivy="antlib:org.apache.ivy.ant">
+	<import file="ivytargets.xml"/>
+
+	<target name="clean" description="delete the bin directory">
+		<delete dir="bin"/>
+	</target>
+
+	<target name="compile" depends="ivy.retrieve" description="compile src/ to bin/main/">
+		<mkdir dir="bin/main"/>
+		<javac srcdir="src/main/java" destdir="bin/main" debug="true" nowarn="yes" source="1.6" target="1.6" encoding="utf8">
+			<compilerarg value="-proc:none"/>
+			<classpath>
+				<fileset dir="bin/lib/build/jars" includes="**/*.jar"/>
+			</classpath>
+		</javac>
+	</target>
+
+	<target name="annotations" depends="compile" description="jar only the annotations into the examples project">
+		<jar destfile="bin/annotations.jar">
+			<fileset dir="bin/main" includes="org/interfacegen/*.class"/>
+		</jar>
+		<copy file="bin/annotations.jar" todir="../examples/lib"/>
+	</target>
+
+	<!--
+	I'm not entirely sure using jarjar here is best practice. Eclipse
+	requires interfacegen.jar to be just one jar, and bringing in joist-util
+	without rewriting seemed likely to cause jar hell confusion. So we'll go
+	with this for now.
+	-->
+	<target name="jar" depends="compile" description="jar bin/main/ into bin/jars/interfacegen.jar and bin/sources/interfacegen.jar">
+		<taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="bin/lib/build/jars/jarjar.jar"/>
+		<mkdir dir="bin/jars"/>
+		<jarjar destfile="bin/jars/interfacegen.jar">
+			<fileset dir="bin/main" includes="**/*.class"/>
+			<zipfileset src="bin/lib/build/jars/joist.util.jar" includes="joist/sourcegen/**/*.class,joist/util/**/*.class"/>
+			<zipfileset dir="META-INF" includes="**/*" prefix="META-INF"/>
+			<rule pattern="joist.sourcegen.*" result="org.interfacegen.dependencies.sourcegen.interfacegen@1"/>
+			<rule pattern="joist.util.*" result="org.interfacegen.dependencies.util.interfacegen@1"/>
+		</jarjar>
+		<mkdir dir="bin/sources"/>
+		<zip destfile="bin/sources/interfacegen.jar">
+			<fileset dir="src/main/java" includes="**/*.java"/>
+		</zip>
+	</target>
+
+	<target name="tests" depends="jar">
+		<!-- compile -->
+		<mkdir dir="bin/tests"/>
+		<javac destdir="bin/tests" debug="true" nowarn="yes" source="1.6" target="1.6" encoding="utf8">
+			<src path="src/test/java"/>
+			<classpath>
+				<pathelement location="bin/jars/interfacegen.jar"/>
+				<fileset dir="bin/lib/tests/jars" includes="**/*.jar"/>
+			</classpath>
+		</javac>
+		<!-- run -->
+		<mkdir dir="bin/results"/>
+		<junit printsummary="on" showoutput="yes" fork="yes" forkmode="once">
+			<classpath>
+				<pathelement location="bin/jars/interfacegen.jar"/>
+				<fileset dir="bin/lib/tests/jars" includes="**/*.jar"/>
+				<pathelement path="bin/tests"/>
+				<pathelement path="src/test/template"/>
+			</classpath>
+			<formatter type="xml"/>
+			<batchtest todir="bin/results">
+				<fileset dir="src/test/java" includes="**/*Test.java" excludes="**/Abstract*.java"/>
+			</batchtest>
+		</junit>
+	</target>
+
+</project>
