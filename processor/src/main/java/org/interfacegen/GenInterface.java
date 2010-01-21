@@ -8,5 +8,6 @@ import java.lang.annotation.Target;
 @Inherited
 @Target(value = { ElementType.TYPE })
 public @interface GenInterface {
-
+	/** The base class for the generated interface. */
+	String base() default "";
 }

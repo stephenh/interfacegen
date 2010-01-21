@@ -71,6 +71,12 @@ public class Processor extends AbstractProcessor {
 
 	private void generateInterface(TypeElement type) {
 		GClass g = new GClass(this.getNameWithIPrefix(type)).setInterface();
+
+		GenInterface gi = type.getAnnotation(GenInterface.class);
+		if (!"".equals(gi.base())) {
+			g.baseClassName(gi.base());
+		}
+
 		for (Element enclosed : type.getEnclosedElements()) {
 			if (enclosed.getKind() == ElementKind.METHOD) {
 				ExecutableElement method = (ExecutableElement) enclosed;
