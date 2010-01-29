@@ -20,13 +20,16 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.TypeMirror;
 import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 import javax.tools.Diagnostic.Kind;
 
 import joist.sourcegen.GClass;
+import joist.sourcegen.GMethod;
 import joist.util.Join;
 
 import org.interfacegen.GenInterface;
@@ -44,7 +47,7 @@ import org.interfacegen.GenInterface;
  * See the processor <a href="http://java.sun.com/javase/6/docs/api/javax/annotation/processing/Processor.html">javadocs</a>
  * for more details.
  */
-@SupportedAnnotationTypes( { "org.interfacegen.GenInterface" })
+@SupportedAnnotationTypes({ "org.interfacegen.GenInterface" })
 @SupportedSourceVersion(SourceVersion.RELEASE_6)
 public class Processor extends AbstractProcessor {
 
@@ -72,6 +75,9 @@ public class Processor extends AbstractProcessor {
 	private void generateInterface(TypeElement type) {
 		GClass g = new GClass(this.getNameWithIPrefix(type)).setInterface();
 
+		// String date = new SimpleDateFormat("yyyy MMM dd hh:mm").format(new Date());
+		// g.addImports(Generated.class).addAnnotation("@Generated(value = \"" + Processor.class.getName() + "\", date = \"" + date + "\")");
+
 		GenInterface gi = type.getAnnotation(GenInterface.class);
 		if (!"".equals(gi.base())) {
 			g.baseClassName(gi.base());
@@ -85,16 +91,45 @@ public class Processor extends AbstractProcessor {
 				}
 			}
 		}
+
 		this.saveCode(g);
 	}
 
 	private void generateMethod(GClass g, ExecutableElement method) {
+		List<String> args = this.getArguments(method);
+		String nameWithArgs = method.getSimpleName() + "(" + Join.commaSpace(args) + ")";
+		GMethod m = g.getMethod(nameWithArgs).returnType(method.getReturnType().toString());
+
+		List<String> params = this.getTypeParameters(method);
+		if (params.size() > 0) {
+			m.typeParameters(Join.commaSpace(params));
+		}
+	}
+
+	private List<String> getArguments(ExecutableElement method) {
 		List<String> args = new ArrayList<String>();
 		for (VariableElement parameter : method.getParameters()) {
 			args.add(parameter.asType().toString() + " " + parameter.getSimpleName());
 		}
-		String nameWithArgs = method.getSimpleName() + "(" + Join.commaSpace(args) + ")";
-		g.getMethod(nameWithArgs).returnType(method.getReturnType().toString());
+		return args;
+	}
+
+	private List<String> getTypeParameters(ExecutableElement method) {
+		List<String> params = new ArrayList<String>();
+		if (method.getTypeParameters().size() != 0) {
+			for (TypeParameterElement p : method.getTypeParameters()) {
+				String base = p.toString();
+				if (p.getBounds().size() > 0) {
+					List<String> bounds = new ArrayList<String>();
+					for (TypeMirror tm : p.getBounds()) {
+						bounds.add(tm.toString());
+					}
+					base += " extends " + Join.join(bounds, " & ");
+				}
+				params.add(base);
+			}
+		}
+		return params;
 	}
 
 	private boolean shouldGenerateMethod(ExecutableElement method) {
