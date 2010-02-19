@@ -7,6 +7,7 @@ public class SubTest extends TestCase {
 	public void testBoth() {
 		ISub s = new Sub();
 		Assert.assertEquals("sub", s.getFromSub());
-		Assert.assertEquals("base", s.getFromBase());
+		Assert.assertEquals("base", s.getFromBase("a"));
+		Assert.assertEquals("root-base", s.getFromRoot());
 	}
 }

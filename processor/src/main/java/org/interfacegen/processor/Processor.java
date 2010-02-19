@@ -94,7 +94,8 @@ public class Processor extends AbstractProcessor {
 			g.baseClassName(gi.base());
 		}
 
-		for (ExecutableElement method : (List<? extends ExecutableElement>) ElementFilter.methodsIn(this.eutils.getAllMembers(type))) {
+		List<? extends ExecutableElement> all = ElementFilter.methodsIn(this.eutils.getAllMembers(type));
+		for (ExecutableElement method : all) {
 			if (this.methodNamesInObject.contains(method.getSimpleName().toString())) {
 				continue;
 			}
