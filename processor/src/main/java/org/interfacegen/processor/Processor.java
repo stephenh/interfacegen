@@ -23,6 +23,8 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.Elements;
 import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
@@ -47,13 +49,22 @@ import org.interfacegen.GenInterface;
  * See the processor <a href="http://java.sun.com/javase/6/docs/api/javax/annotation/processing/Processor.html">javadocs</a>
  * for more details.
  */
-@SupportedAnnotationTypes({ "org.interfacegen.GenInterface" })
+@SupportedAnnotationTypes( { "org.interfacegen.GenInterface" })
 @SupportedSourceVersion(SourceVersion.RELEASE_6)
 public class Processor extends AbstractProcessor {
+
+	private final List<String> methodNamesInObject = new ArrayList<String>();
+	private Elements eutils; // this is dumb, but it's shorter than processingEnv.getElementUtils
 
 	@Override
 	public void init(ProcessingEnvironment processingEnv) {
 		super.init(processingEnv);
+		this.eutils = processingEnv.getElementUtils();
+		if (this.methodNamesInObject.size() == 0) {
+			for (ExecutableElement m : ElementFilter.methodsIn(this.eutils.getTypeElement("java.lang.Object").getEnclosedElements())) {
+				this.methodNamesInObject.add(m.getSimpleName().toString());
+			}
+		}
 	}
 
 	@Override
@@ -83,12 +94,12 @@ public class Processor extends AbstractProcessor {
 			g.baseClassName(gi.base());
 		}
 
-		for (Element enclosed : type.getEnclosedElements()) {
-			if (enclosed.getKind() == ElementKind.METHOD) {
-				ExecutableElement method = (ExecutableElement) enclosed;
-				if (this.shouldGenerateMethod(method)) {
-					this.generateMethod(g, method);
-				}
+		for (ExecutableElement method : (List<? extends ExecutableElement>) ElementFilter.methodsIn(this.eutils.getAllMembers(type))) {
+			if (this.methodNamesInObject.contains(method.getSimpleName().toString())) {
+				continue;
+			}
+			if (this.shouldGenerateMethod(method)) {
+				this.generateMethod(g, method);
 			}
 		}
 
