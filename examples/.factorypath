@@ -1,0 +1,4 @@
+<factorypath>
+    <factorypathentry kind="PLUGIN" id="org.bindgen" enabled="false" runInBatchMode="false"/>
+    <factorypathentry kind="PLUGIN" id="org.interfacegen" enabled="true" runInBatchMode="false"/>
+</factorypath>

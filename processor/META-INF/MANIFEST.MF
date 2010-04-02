@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+Export-Package: org.interfacegen.processor
+Require-Bundle: org.eclipse.core.runtime,org.eclipse.jdt.apt.core
+Bundle-Vendor: Exigence
+Bundle-Version: 0.0.0
+Bundle-Name: Interfacegen Annotation Processor Plug-in
+Bundle-ActivationPolicy: lazy
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: org.interfacegen;singleton:=true
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-ClassPath: bin/lib/build/jars/joist.util.jar,
+ .
+
