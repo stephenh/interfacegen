@@ -105,6 +105,9 @@ public class Processor extends AbstractProcessor {
 		if (!"".equals(gi.base())) {
 			g.baseClassName(gi.base());
 		}
+		for (String annotation : gi.annotations()) {
+			g.addAnnotation("@" + annotation);
+		}
 
 		// String date = new SimpleDateFormat("yyyy MMM dd hh:mm").format(new Date());
 		// g.addImports(Generated.class).addAnnotation("@Generated(value = \"" + Processor.class.getName() + "\", date = \"" + date + "\")");

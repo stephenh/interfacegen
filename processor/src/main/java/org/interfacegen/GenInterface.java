@@ -13,4 +13,6 @@ public @interface GenInterface {
 
 	/** The name (simple or full) for the generated interface. */
 	String name() default "";
+
+	String[] annotations() default {};
 }
