@@ -14,4 +14,9 @@ public class CrossPackageTest extends AbstractTestCase {
 		this.compile("t1/foo/Foo.java", "t1/bar/Bar.java");
 	}
 
+	@Test
+	public void withShim() throws Exception {
+		this.compile("t2/foo/Foo.java", "t2/bar/IBar.java", "t2/bar/Bar.java");
+	}
+
 }

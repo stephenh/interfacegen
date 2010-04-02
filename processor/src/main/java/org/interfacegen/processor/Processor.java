@@ -22,6 +22,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
@@ -61,8 +62,11 @@ public class Processor extends AbstractProcessor {
 		super.init(processingEnv);
 		this.eutils = processingEnv.getElementUtils();
 		if (this.methodNamesInObject.size() == 0) {
-			for (ExecutableElement m : ElementFilter.methodsIn(this.eutils.getTypeElement("java.lang.Object").getEnclosedElements())) {
-				this.methodNamesInObject.add(m.getSimpleName().toString());
+			TypeElement object = this.eutils.getTypeElement("java.lang.Object");
+			if (object != null) {
+				for (ExecutableElement m : ElementFilter.methodsIn(object.getEnclosedElements())) {
+					this.methodNamesInObject.add(m.getSimpleName().toString());
+				}
 			}
 		}
 	}
@@ -84,15 +88,26 @@ public class Processor extends AbstractProcessor {
 	}
 
 	private void generateInterface(TypeElement type) {
-		GClass g = new GClass(this.getNameWithIPrefix(type)).setInterface();
-
-		// String date = new SimpleDateFormat("yyyy MMM dd hh:mm").format(new Date());
-		// g.addImports(Generated.class).addAnnotation("@Generated(value = \"" + Processor.class.getName() + "\", date = \"" + date + "\")");
-
 		GenInterface gi = type.getAnnotation(GenInterface.class);
+
+		final String fullClassName;
+		if (!"".equals(gi.name())) {
+			if (gi.name().indexOf(".") > -1) {
+				fullClassName = gi.name();
+			} else {
+				fullClassName = this.processingEnv.getElementUtils().getPackageOf(type).getQualifiedName().toString() + "." + gi.name();
+			}
+		} else {
+			fullClassName = this.getNameWithIPrefix(type);
+		}
+
+		GClass g = new GClass(fullClassName).setInterface();
 		if (!"".equals(gi.base())) {
 			g.baseClassName(gi.base());
 		}
+
+		// String date = new SimpleDateFormat("yyyy MMM dd hh:mm").format(new Date());
+		// g.addImports(Generated.class).addAnnotation("@Generated(value = \"" + Processor.class.getName() + "\", date = \"" + date + "\")");
 
 		List<? extends ExecutableElement> all = ElementFilter.methodsIn(this.eutils.getAllMembers(type));
 		for (ExecutableElement method : all) {
@@ -122,6 +137,9 @@ public class Processor extends AbstractProcessor {
 		List<String> args = new ArrayList<String>();
 		for (VariableElement parameter : method.getParameters()) {
 			args.add(parameter.asType().toString() + " " + parameter.getSimpleName());
+			if (parameter.asType().getKind() == TypeKind.ERROR) {
+				System.err.println("Crap " + parameter);
+			}
 		}
 		return args;
 	}

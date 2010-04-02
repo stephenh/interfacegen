@@ -10,4 +10,7 @@ import java.lang.annotation.Target;
 public @interface GenInterface {
 	/** The base class for the generated interface. */
 	String base() default "";
+
+	/** The name (simple or full) for the generated interface. */
+	String name() default "";
 }
