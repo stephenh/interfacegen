@@ -1,10 +1,5 @@
 package org.interfacegen.processor;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.io.Writer;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -20,15 +15,8 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.TypeParameterElement;
-import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.TypeKind;
-import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
-import javax.tools.FileObject;
-import javax.tools.JavaFileObject;
-import javax.tools.StandardLocation;
 import javax.tools.Diagnostic.Kind;
 
 import joist.sourcegen.GClass;
@@ -82,7 +70,7 @@ public class Processor extends AbstractProcessor {
 				}
 			}
 		} catch (Exception e) {
-			this.logExceptionToTextFile(e);
+			Util.logExceptionToTextFile(this.processingEnv, e);
 		}
 		return true;
 	}
@@ -122,47 +110,18 @@ public class Processor extends AbstractProcessor {
 			}
 		}
 
-		this.saveCode(g);
+		Util.saveCode(this.processingEnv, g);
 	}
 
 	private void generateMethod(GClass g, ExecutableElement method) {
-		List<String> args = this.getArguments(method);
+		List<String> args = Util.getArguments(method);
 		String nameWithArgs = method.getSimpleName() + "(" + Join.commaSpace(args) + ")";
 		GMethod m = g.getMethod(nameWithArgs).returnType(method.getReturnType().toString());
 
-		List<String> params = this.getTypeParameters(method);
+		List<String> params = Util.getTypeParameters(method);
 		if (params.size() > 0) {
 			m.typeParameters(Join.commaSpace(params));
 		}
-	}
-
-	private List<String> getArguments(ExecutableElement method) {
-		List<String> args = new ArrayList<String>();
-		for (VariableElement parameter : method.getParameters()) {
-			args.add(parameter.asType().toString() + " " + parameter.getSimpleName());
-			if (parameter.asType().getKind() == TypeKind.ERROR) {
-				System.err.println("Crap " + parameter);
-			}
-		}
-		return args;
-	}
-
-	private List<String> getTypeParameters(ExecutableElement method) {
-		List<String> params = new ArrayList<String>();
-		if (method.getTypeParameters().size() != 0) {
-			for (TypeParameterElement p : method.getTypeParameters()) {
-				String base = p.toString();
-				if (p.getBounds().size() > 0) {
-					List<String> bounds = new ArrayList<String>();
-					for (TypeMirror tm : p.getBounds()) {
-						bounds.add(tm.toString());
-					}
-					base += " extends " + Join.join(bounds, " & ");
-				}
-				params.add(base);
-			}
-		}
-		return params;
 	}
 
 	private boolean shouldGenerateMethod(ExecutableElement method) {
@@ -176,36 +135,6 @@ public class Processor extends AbstractProcessor {
 		String[] parts = type.toString().split("\\.");
 		parts[parts.length - 1] = "I" + parts[parts.length - 1];
 		return Join.join(parts, ".");
-	}
-
-	private void saveCode(GClass gc, Element... sourceElements) {
-		try {
-			JavaFileObject jfo = this.processingEnv.getFiler().createSourceFile(gc.getFullClassNameWithoutGeneric(), sourceElements);
-			Writer w = jfo.openWriter();
-			w.write(gc.toCode());
-			w.close();
-		} catch (IOException io) {
-			this.processingEnv.getMessager().printMessage(Kind.ERROR, io.getMessage());
-		}
-	}
-
-	/** Logs <code>e</code> to <code>SOURCE_OUTPUT/interfacegen-errors.txt</code> */
-	private void logExceptionToTextFile(Exception e) {
-		try {
-			FileObject fo = this.processingEnv.getFiler().createResource(StandardLocation.SOURCE_OUTPUT, "", "interfacegen-exception.txt");
-			OutputStream out = fo.openOutputStream();
-			e.printStackTrace(new PrintStream(out));
-			// Specifically for Eclipse's AbortCompilation exception which has a useless printStackTrace output
-			try {
-				Field f = e.getClass().getField("problem");
-				Object problem = f.get(e);
-				out.write(problem.toString().getBytes());
-			} catch (NoSuchFieldException nsfe) {
-			}
-			out.close();
-		} catch (Exception e2) {
-			this.processingEnv.getMessager().printMessage(Kind.ERROR, "Error writing out error message " + e2.getMessage());
-		}
 	}
 
 	private void warnElementIsUnhandled(Element element) {
