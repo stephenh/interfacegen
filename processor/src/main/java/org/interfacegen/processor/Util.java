@@ -11,6 +11,7 @@ import java.util.List;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
@@ -51,6 +52,14 @@ public class Util {
 			out.close();
 		} catch (Exception e2) {
 			env.getMessager().printMessage(Kind.ERROR, "Error writing out error message " + e2.getMessage());
+		}
+	}
+
+	public static String simpleOrFull(ProcessingEnvironment env, TypeElement declaredIn, String name) {
+		if (name.indexOf(".") > -1) {
+			return name;
+		} else {
+			return env.getElementUtils().getPackageOf(declaredIn).getQualifiedName().toString() + "." + name;
 		}
 	}
 

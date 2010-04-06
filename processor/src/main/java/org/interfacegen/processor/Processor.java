@@ -83,11 +83,7 @@ public class Processor extends AbstractProcessor {
 
 		String fullClassName;
 		if (!"".equals(gi.name())) {
-			if (gi.name().indexOf(".") > -1) {
-				fullClassName = gi.name();
-			} else {
-				fullClassName = this.processingEnv.getElementUtils().getPackageOf(type).getQualifiedName().toString() + "." + gi.name();
-			}
+			fullClassName = Util.simpleOrFull(this.processingEnv, type, gi.name());
 		} else {
 			fullClassName = this.getNameWithIPrefix(type);
 		}
