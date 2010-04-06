@@ -16,7 +16,6 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
-import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic.Kind;
 
 import joist.sourcegen.GClass;
@@ -43,14 +42,12 @@ import org.interfacegen.GenInterface;
 public class Processor extends AbstractProcessor {
 
 	private final List<String> methodNamesInObject = new ArrayList<String>();
-	private Elements eutils; // this is dumb, but it's shorter than processingEnv.getElementUtils
 
 	@Override
 	public void init(ProcessingEnvironment processingEnv) {
 		super.init(processingEnv);
-		this.eutils = processingEnv.getElementUtils();
 		if (this.methodNamesInObject.size() == 0) {
-			TypeElement object = this.eutils.getTypeElement("java.lang.Object");
+			TypeElement object = processingEnv.getElementUtils().getTypeElement("java.lang.Object");
 			if (object != null) {
 				for (ExecutableElement m : ElementFilter.methodsIn(object.getEnclosedElements())) {
 					this.methodNamesInObject.add(m.getSimpleName().toString());
@@ -86,7 +83,7 @@ public class Processor extends AbstractProcessor {
 			g.addAnnotation("@" + annotation);
 		}
 
-		for (ExecutableElement method : ElementFilter.methodsIn(this.eutils.getAllMembers(type))) {
+		for (ExecutableElement method : ElementFilter.methodsIn(this.processingEnv.getElementUtils().getAllMembers(type))) {
 			if (this.methodNamesInObject.contains(method.getSimpleName().toString())) {
 				continue;
 			}
