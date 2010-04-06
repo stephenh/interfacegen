@@ -122,9 +122,8 @@ public class Processor extends AbstractProcessor {
 
 	private boolean shouldGenerateMethod(ExecutableElement method) {
 		boolean isStatic = method.getModifiers().contains(Modifier.STATIC);
-		boolean isPrivate = method.getModifiers().contains(Modifier.PRIVATE);
-		boolean notPublic = !method.getModifiers().contains(Modifier.PUBLIC);
-		return !isStatic && !isPrivate && !notPublic;
+		boolean isPublic = method.getModifiers().contains(Modifier.PUBLIC);
+		return !isStatic && isPublic;
 	}
 
 	private String getNameWithIPrefix(TypeElement type) {
