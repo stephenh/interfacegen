@@ -109,6 +109,9 @@ public class Processor extends AbstractProcessor {
 				continue;
 			}
 			if (this.shouldGenerateMethod(method)) {
+				if (method.getEnclosingElement().toString().equals(g.getFullClassNameWithoutGeneric())) {
+					continue;
+				}
 				this.generateMethod(g, method);
 			}
 		}
