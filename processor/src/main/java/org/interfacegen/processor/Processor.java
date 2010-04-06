@@ -81,7 +81,7 @@ public class Processor extends AbstractProcessor {
 	private void generateInterface(TypeElement type) {
 		GenInterface gi = type.getAnnotation(GenInterface.class);
 
-		final String fullClassName;
+		String fullClassName;
 		if (!"".equals(gi.name())) {
 			if (gi.name().indexOf(".") > -1) {
 				fullClassName = gi.name();
@@ -91,6 +91,7 @@ public class Processor extends AbstractProcessor {
 		} else {
 			fullClassName = this.getNameWithIPrefix(type);
 		}
+		fullClassName += new GenericSuffix(type).varsWithBounds;
 
 		GClass g = new GClass(fullClassName).setInterface();
 		if (!"".equals(gi.base())) {
