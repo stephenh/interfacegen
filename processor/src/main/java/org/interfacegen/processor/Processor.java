@@ -86,8 +86,7 @@ public class Processor extends AbstractProcessor {
 			g.addAnnotation("@" + annotation);
 		}
 
-		List<? extends ExecutableElement> all = ElementFilter.methodsIn(this.eutils.getAllMembers(type));
-		for (ExecutableElement method : all) {
+		for (ExecutableElement method : ElementFilter.methodsIn(this.eutils.getAllMembers(type))) {
 			if (this.methodNamesInObject.contains(method.getSimpleName().toString())) {
 				continue;
 			}
