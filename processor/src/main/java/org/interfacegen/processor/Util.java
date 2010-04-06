@@ -5,12 +5,16 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.Writer;
 import java.lang.reflect.Field;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
+import javax.annotation.Generated;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
@@ -54,6 +58,14 @@ public class Util {
 		}
 	}
 
+	public static String simpleOrFull(ProcessingEnvironment env, TypeElement declaredIn, String name) {
+		if (name.indexOf(".") > -1) {
+			return name;
+		} else {
+			return env.getElementUtils().getPackageOf(declaredIn).getQualifiedName().toString() + "." + name;
+		}
+	}
+
 	public static List<String> getArguments(ExecutableElement method) {
 		List<String> args = new ArrayList<String>();
 		for (VariableElement parameter : method.getParameters()) {
@@ -78,6 +90,13 @@ public class Util {
 			}
 		}
 		return params;
+	}
+
+	public static void addGenerated(GClass gclass, Class<?> processorClass) {
+		String value = processorClass.getName();
+		String date = new SimpleDateFormat("dd MMM yyyy hh:mm").format(new Date());
+		gclass.addImports(Generated.class);
+		gclass.addAnnotation("@Generated(value = \"" + value + "\", date = \"" + date + "\")");
 	}
 
 }

@@ -16,7 +16,6 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
-import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic.Kind;
 
 import joist.sourcegen.GClass;
@@ -43,14 +42,12 @@ import org.interfacegen.GenInterface;
 public class Processor extends AbstractProcessor {
 
 	private final List<String> methodNamesInObject = new ArrayList<String>();
-	private Elements eutils; // this is dumb, but it's shorter than processingEnv.getElementUtils
 
 	@Override
 	public void init(ProcessingEnvironment processingEnv) {
 		super.init(processingEnv);
-		this.eutils = processingEnv.getElementUtils();
 		if (this.methodNamesInObject.size() == 0) {
-			TypeElement object = this.eutils.getTypeElement("java.lang.Object");
+			TypeElement object = processingEnv.getElementUtils().getTypeElement("java.lang.Object");
 			if (object != null) {
 				for (ExecutableElement m : ElementFilter.methodsIn(object.getEnclosedElements())) {
 					this.methodNamesInObject.add(m.getSimpleName().toString());
@@ -78,18 +75,7 @@ public class Processor extends AbstractProcessor {
 	private void generateInterface(TypeElement type) {
 		GenInterface gi = type.getAnnotation(GenInterface.class);
 
-		final String fullClassName;
-		if (!"".equals(gi.name())) {
-			if (gi.name().indexOf(".") > -1) {
-				fullClassName = gi.name();
-			} else {
-				fullClassName = this.processingEnv.getElementUtils().getPackageOf(type).getQualifiedName().toString() + "." + gi.name();
-			}
-		} else {
-			fullClassName = this.getNameWithIPrefix(type);
-		}
-
-		GClass g = new GClass(fullClassName).setInterface();
+		GClass g = new GClass(this.fullClassName(gi, type)).setInterface();
 		if (!"".equals(gi.base())) {
 			g.baseClassName(gi.base());
 		}
@@ -97,20 +83,30 @@ public class Processor extends AbstractProcessor {
 			g.addAnnotation("@" + annotation);
 		}
 
-		// String date = new SimpleDateFormat("yyyy MMM dd hh:mm").format(new Date());
-		// g.addImports(Generated.class).addAnnotation("@Generated(value = \"" + Processor.class.getName() + "\", date = \"" + date + "\")");
-
-		List<? extends ExecutableElement> all = ElementFilter.methodsIn(this.eutils.getAllMembers(type));
-		for (ExecutableElement method : all) {
+		for (ExecutableElement method : ElementFilter.methodsIn(this.processingEnv.getElementUtils().getAllMembers(type))) {
 			if (this.methodNamesInObject.contains(method.getSimpleName().toString())) {
 				continue;
 			}
 			if (this.shouldGenerateMethod(method)) {
+				if (method.getEnclosingElement().toString().equals(g.getFullClassNameWithoutGeneric())) {
+					continue;
+				}
 				this.generateMethod(g, method);
 			}
 		}
 
+		Util.addGenerated(g, Processor.class);
 		Util.saveCode(this.processingEnv, g);
+	}
+
+	private String fullClassName(GenInterface gi, TypeElement type) {
+		String fullClassName;
+		if (!"".equals(gi.name())) {
+			fullClassName = Util.simpleOrFull(this.processingEnv, type, gi.name());
+		} else {
+			fullClassName = this.getNameWithIPrefix(type);
+		}
+		return fullClassName + new GenericSuffix(type).varsWithBounds;
 	}
 
 	private void generateMethod(GClass g, ExecutableElement method) {
@@ -126,9 +122,8 @@ public class Processor extends AbstractProcessor {
 
 	private boolean shouldGenerateMethod(ExecutableElement method) {
 		boolean isStatic = method.getModifiers().contains(Modifier.STATIC);
-		boolean isPrivate = method.getModifiers().contains(Modifier.PRIVATE);
-		boolean notPublic = !method.getModifiers().contains(Modifier.PUBLIC);
-		return !isStatic && !isPrivate && !notPublic;
+		boolean isPublic = method.getModifiers().contains(Modifier.PUBLIC);
+		return !isStatic && isPublic;
 	}
 
 	private String getNameWithIPrefix(TypeElement type) {
