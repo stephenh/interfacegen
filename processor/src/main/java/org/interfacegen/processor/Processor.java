@@ -1,12 +1,9 @@
 package org.interfacegen.processor;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
-import javax.annotation.Generated;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
@@ -81,24 +78,13 @@ public class Processor extends AbstractProcessor {
 	private void generateInterface(TypeElement type) {
 		GenInterface gi = type.getAnnotation(GenInterface.class);
 
-		String fullClassName;
-		if (!"".equals(gi.name())) {
-			fullClassName = Util.simpleOrFull(this.processingEnv, type, gi.name());
-		} else {
-			fullClassName = this.getNameWithIPrefix(type);
-		}
-		fullClassName += new GenericSuffix(type).varsWithBounds;
-
-		GClass g = new GClass(fullClassName).setInterface();
+		GClass g = new GClass(this.fullClassName(gi, type)).setInterface();
 		if (!"".equals(gi.base())) {
 			g.baseClassName(gi.base());
 		}
 		for (String annotation : gi.annotations()) {
 			g.addAnnotation("@" + annotation);
 		}
-
-		String date = new SimpleDateFormat("yyyy MMM dd hh:mm").format(new Date());
-		g.addImports(Generated.class).addAnnotation("@Generated(value = \"" + Processor.class.getName() + "\", date = \"" + date + "\")");
 
 		List<? extends ExecutableElement> all = ElementFilter.methodsIn(this.eutils.getAllMembers(type));
 		for (ExecutableElement method : all) {
@@ -113,7 +99,18 @@ public class Processor extends AbstractProcessor {
 			}
 		}
 
+		Util.addGenerated(g, Processor.class);
 		Util.saveCode(this.processingEnv, g);
+	}
+
+	private String fullClassName(GenInterface gi, TypeElement type) {
+		String fullClassName;
+		if (!"".equals(gi.name())) {
+			fullClassName = Util.simpleOrFull(this.processingEnv, type, gi.name());
+		} else {
+			fullClassName = this.getNameWithIPrefix(type);
+		}
+		return fullClassName + new GenericSuffix(type).varsWithBounds;
 	}
 
 	private void generateMethod(GClass g, ExecutableElement method) {

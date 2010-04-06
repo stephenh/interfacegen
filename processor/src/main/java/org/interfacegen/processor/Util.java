@@ -5,9 +5,12 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.Writer;
 import java.lang.reflect.Field;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
+import javax.annotation.Generated;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -87,6 +90,13 @@ public class Util {
 			}
 		}
 		return params;
+	}
+
+	public static void addGenerated(GClass gclass, Class<?> processorClass) {
+		String value = processorClass.getName();
+		String date = new SimpleDateFormat("dd MMM yyyy hh:mm").format(new Date());
+		gclass.addImports(Generated.class);
+		gclass.addAnnotation("@Generated(value = \"" + value + "\", date = \"" + date + "\")");
 	}
 
 }
